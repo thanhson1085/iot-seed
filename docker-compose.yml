@@ -1,0 +1,10 @@
+version: "2"
+
+services:
+  broker:
+    build: ./broker/.
+    networks:
+      - broker-tier
+volumes:
+networks:
+  broker-tier:
