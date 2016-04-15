@@ -11,5 +11,8 @@
     "mqtt"
   ],
   "author": "Nguyen Sy Thanh Son",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "mqtt": "^1.8.0"
+  }
 }

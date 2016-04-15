@@ -43,7 +43,7 @@ services:
     networks:
       - influxdb-tier
   chart:
-    build: ./chart/
+    image: grafana
     networks:
       - influxdb-tier
 volumes:
