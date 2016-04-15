@@ -1,10 +1,55 @@
 version: "2"
 
 services:
+  client:
+    build: ./client/.
+    networks:
+      - client-tier
+  gateway:
+    image: haproxy
+    networks:
+      - broker-tier
+      - gateway-tier
   broker:
     build: ./broker/.
     networks:
       - broker-tier
+  service:
+    build: ./service/.
+    networks:
+      - broker-tier
+      - service-tier
+      - db-tier
+  db:
+    images: mongo
+    networks:
+      - db-tier
+  producer:
+    build: ./producer/.
+    networks:
+      - db-tier
+      - queue-tier
+  queue:
+    image: redis
+    networks:
+      - queue-tier
+  consumer:
+    build: ./consumer/.
+    networks:
+      - queue-tier
+      - influxdb-tier
+  influxdb:
+    images: influxdb
+    networks:
+      - influxdb-tier
+  chart:
+    build: ./chart/
+    networks:
+      - influxdb-tier
 volumes:
 networks:
   broker-tier:
+  db-tier:
+  service-tier:
+  queue-tier:
+  influxdb-tier:

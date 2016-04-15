@@ -11,4 +11,8 @@ RUN \
     wget --no-check-certificate https://bintray.com/artifact/download/erlio/vernemq/deb/trusty/vernemq_0.12.5p2-1_amd64.deb && \
     dpkg -i vernemq_0.12.5p2-1_amd64.deb
 
-CMD ["/bin/bash"]
+COPY entrypoint.sh /
+
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
