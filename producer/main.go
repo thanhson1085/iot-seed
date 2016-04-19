@@ -70,18 +70,6 @@ func main() {
 
 	q := OplogQuery{session, bson.M{"ts": bson.M{"$gt": last}, "ns": "TailTest.test"}, time.Second * 10}
 
-	/*
-		db := session.DB("TailTest")
-		defer db.DropDatabase()
-		coll := db.C("test")
-		for i := 0; i < 5; i++ {
-			id := bson.NewObjectId()
-			if err := coll.Insert(bson.M{"name": "test_0", "_id": id}); err != nil {
-				fmt.Println(err)
-			}
-			//fmt.Fprintf(&buffer, "TailTest.test|i|%s\n", id.Hex())
-		}
-	*/
 	client := redis.NewClient(&redis.Options{
 		Addr:     "192.168.1.191:6379",
 		Password: "", // no password set
@@ -92,8 +80,11 @@ func main() {
 		go q.Tail(logs, done)
 		for log := range logs {
 			id := log.Object["_id"].(bson.ObjectId).Hex()
-			client.Publish("mongdb_oblog", log.Namespace)
 			fmt.Printf("%s|%s|%s\n", log.Namespace, log.Operation, id)
+			name, ok := log.Object["name"]
+			if ok {
+				client.Publish("mongdb_oblog", name.(string))
+			}
 		}
 	}
 }
