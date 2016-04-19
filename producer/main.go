@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"gopkg.in/redis.v3"
 	"io"
 	"time"
 )
@@ -64,34 +64,36 @@ func main() {
 	}
 	defer session.Close()
 
-	var results bytes.Buffer
-	var buffer bytes.Buffer
-
 	logs := make(chan Oplog)
 	done := make(chan bool)
 	last := LastTime(session)
 
 	q := OplogQuery{session, bson.M{"ts": bson.M{"$gt": last}, "ns": "TailTest.test"}, time.Second * 10}
-	go q.Tail(logs, done)
-	go func() {
-		printlog(&results, logs)
-	}()
 
-	db := session.DB("TailTest")
-	defer db.DropDatabase()
-	coll := db.C("test")
-	for i := 0; i < 5; i++ {
-		id := bson.NewObjectId()
-		if err := coll.Insert(bson.M{"name": "test_0", "_id": id}); err != nil {
-			fmt.Println(err)
+	/*
+		db := session.DB("TailTest")
+		defer db.DropDatabase()
+		coll := db.C("test")
+		for i := 0; i < 5; i++ {
+			id := bson.NewObjectId()
+			if err := coll.Insert(bson.M{"name": "test_0", "_id": id}); err != nil {
+				fmt.Println(err)
+			}
+			//fmt.Fprintf(&buffer, "TailTest.test|i|%s\n", id.Hex())
 		}
-		fmt.Fprintf(&buffer, "TailTest.test|i|%s\n", id.Hex())
-	}
+	*/
+	client := redis.NewClient(&redis.Options{
+		Addr:     "192.168.1.191:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
 
-	resultsString := results.String()
-	bufferString := buffer.String()
-	if resultsString != bufferString {
-		fmt.Printf("Got:\n%s\n\nShould have gotten: \n%s", resultsString, bufferString)
+	for {
+		go q.Tail(logs, done)
+		for log := range logs {
+			id := log.Object["_id"].(bson.ObjectId).Hex()
+			client.Publish("mongdb_oblog", log.Namespace)
+			fmt.Printf("%s|%s|%s\n", log.Namespace, log.Operation, id)
+		}
 	}
-
 }
