@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -81,9 +82,9 @@ func main() {
 		for log := range logs {
 			id := log.Object["_id"].(bson.ObjectId).Hex()
 			fmt.Printf("%s|%s|%s\n", log.Namespace, log.Operation, id)
-			name, ok := log.Object["name"]
-			if ok {
-				client.Publish("mongdb_oblog", name.(string))
+			jsonString, err := json.Marshal(log.Object)
+			if err == nil {
+				client.Publish("mongdb_oblog", string(jsonString))
 			}
 		}
 	}
